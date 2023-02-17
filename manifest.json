@@ -1,0 +1,34 @@
+{
+	"manifest_version": 3,
+	"name": "Minesweeper Helper",
+	"short_name": "MH",
+	"version": "0.0.1",
+	"permissions": [
+		"activeTab",
+		"webNavigation",
+		"debugger",
+		"storage",
+		"background",
+		"webRequest",
+		"tabs"
+	],
+	"host_permissions": [
+		"<all_urls>"
+	],
+	"icons": {
+		"16": "simley_16.png",
+		"48": "simley_48.png",
+	    "128": "simley_128.png"
+	},
+	"action": {
+		"name": "popup",
+		"default_popup": "popup.html"
+	},
+ 	"description": "Export boards in csv format and outputs to log",
+	 "content_scripts": [
+		{
+		  "matches": ["<all_urls>"],
+		  "js": ["index.js"]
+		}
+	 ]
+} 
