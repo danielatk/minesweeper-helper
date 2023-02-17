@@ -7,7 +7,7 @@ function showData(board) {
 
       let tempElem = document.createElement('a');
       tempElem.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(board));
-      tempElem.setAttribute('download', `${boardDescription}_${timestamp}`);
+      tempElem.setAttribute('download', `${boardDescription}_${timestamp}.mine`);
       tempElem.click();
   }
 };
