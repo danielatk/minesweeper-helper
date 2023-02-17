@@ -33,8 +33,10 @@ function getBoard() {
                 colsAdjusted = true;
                 break;
             }
-            var cellStatus = -1;
-            if (cell.className.includes('hd_type')) {
+            var cellStatus = 'H';
+            if (cell.className.includes('hd_flag')) {
+                cellStatus = 'F';
+            } else if (cell.className.includes('hd_type')) {
                 cellStatus = parseInt(cell.className.slice(-1));
             }
             row.push(cellStatus)
