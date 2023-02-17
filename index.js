@@ -6,42 +6,67 @@
 
 chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
     if (msg.text === 'export') {
-        console.log(getBoard());
-        sendResponse(getBoard());
+        let board = getBoard();
+        console.log(board);
+        sendResponse(board);
     }
 });
 
 function getBoard() {
-    var numCols = 1000;
-    var numRows = 1000;
-    var colsAdjusted = false;
-    var breakLoop = false;
-    var board = [];
-    for (var i = 0; i < numRows; i++) {
-        if (breakLoop) {
+    let width = -1;
+    let height = -1;
+    let mines = -1;
+
+    let currentLevel = document.getElementsByClassName('level-select-link active')[0];
+
+    switch (currentLevel.textContent) {
+        case 'Easy':
+        case 'Beginner':
+            width = 9;
+            height = 9;
+            mines = 10;
             break;
-        }
-        var row = [];
-        for (var j = 0; j < numCols; j++) {
-            var cell = document.getElementById(`cell_${j}_${i}`);
-            if (typeof cell === 'undefined' || cell === null) {
-                if (colsAdjusted) {
-                    breakLoop = true;
-                    break;
-                }
-                numCols = j;
-                colsAdjusted = true;
-                break;
-            }
-            var cellStatus = 'H';
+        case 'Medium':
+        case 'Intermediate':
+            width = 16;
+            height = 16;
+            mines = 40;
+            break;
+        case 'Hard':
+        case 'Expert':
+            width = 30;
+            height = 16;
+            mines = 99;
+            break;
+        case 'Evil':
+            width = 30;
+            height = 20;
+            mines = 130;
+            break;
+        default:
+            break;
+    }
+
+    if (width === -1) {
+        // custom mode
+        width = document.getElementById('custom_width').value;
+        height = document.getElementById('custom_height').value;
+        mines = document.getElementById('custom_mines').value;
+    }
+
+    let data = width + "x" + height + "x" + mines + '\n';
+    for (let i = 0; i < height; i++) {
+        for (let j = 0; j < width; j++) {
+            let cell = document.getElementById(`cell_${j}_${i}`);
+            let cellStatus = 'H';
             if (cell.className.includes('hd_flag')) {
                 cellStatus = 'F';
             } else if (cell.className.includes('hd_type')) {
                 cellStatus = parseInt(cell.className.slice(-1));
             }
-            row.push(cellStatus)
+            data = data + cellStatus;
         }
-        board.push(row);
+        data = data + '\n';
     }
-    return board;
+    return data;
 }
