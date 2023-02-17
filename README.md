@@ -12,6 +12,8 @@ It is inconvenient to run the instructions above on Windows. For more informatio
 https://stackoverflow.com/questions/24577024/install-chrome-extension-not-in-the-store
 
 ## Usage
+Currently this extension will save the board of any minesweeper.online game currently active in CSV format.
+-1 indicates unopened cells, while all other numbers indicate the number of mines adjacent to the opened cell.
 
 ## Contact
 My profile in minesweeper.online: https://minesweeper.online/player/11626743
