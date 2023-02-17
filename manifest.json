@@ -13,7 +13,7 @@
 		"tabs"
 	],
 	"host_permissions": [
-		"<all_urls>"
+		"https://minesweeper.online/game/*"
 	],
 	"icons": {
 		"16": "simley_16.png",
@@ -27,7 +27,7 @@
  	"description": "Export boards in csv format and outputs to log",
 	 "content_scripts": [
 		{
-		  "matches": ["<all_urls>"],
+		  "matches": ["https://minesweeper.online/game/*"],
 		  "js": ["index.js"]
 		}
 	 ]
