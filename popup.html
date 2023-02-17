@@ -58,7 +58,31 @@ button {
 <body>
 <form method="post">
 
-<div id="status"></div>
+  <div style="margin-top: 10px;">
+    <label>Style:</label>
+    <select id="playstyle">
+        <option value="flag">Flagging</option>
+        <option value="noflag">No flagging</option>
+        <option value="eff">Efficiency</option>
+        <option value="nfeff">NF Efficiency</option>
+    </select>
+</div>
+
+<div style="margin-top: 1em;" class="checkboxes" id="play1">
+  <label><input type="checkbox" class="checkbox" id="showhints" checked /> <span>Show hints</span></label>
+  <label><input type="checkbox" class="checkbox" id="acceptguesses" /> <span>Accept guesses</span></label>
+</div>
+
+<div style="margin-top: 10px;">
+  <label>Overlay:</label>
+  <select id="overlay">
+      <option value="none">None</option>
+      <option value="safety">Safety %</option>
+      <option value="mine">Mine %</option>
+  </select>
+</div>
+
+<button type="button" style="margin-top: 1em;" id="AnalysisButton" onclick="doAnalysis()"><u>A</u>nalyse</button>
 
 <button id="export">Export board</button>
 <script src="popup.js"></script>
