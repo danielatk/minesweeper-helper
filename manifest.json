@@ -20,7 +20,8 @@
 		"matches": ["https://minesweeper.online/*"],
 		"resources": [
 			"client/*",
-			"Utility/*"
+			"Utility/*",
+			"resources/*"
 		]
 	}],
 	"icons": {

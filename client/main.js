@@ -35,6 +35,12 @@ let overlay = 'None';
 
 let justPressedAnalyse = false;
 
+let facingDownImgUrl = chrome.runtime.getURL("resources/images/facingDown.png");
+let facingDownGreenImgUrl = chrome.runtime.getURL("resources/images/facingDownGreen.png");
+let facingDownBlackImgUrl = chrome.runtime.getURL("resources/images/facingDownBlack.png");
+let facingDownOrangeImgUrl = chrome.runtime.getURL("resources/images/facingDownOrange.png");
+let facingDownRedImgUrl = chrome.runtime.getURL("resources/images/facingDownRed.png");
+
 function toggleShowHints(value) {
     showHints = value;
 }
@@ -224,26 +230,36 @@ function renderHints(hints, otherActions) {
 
         const hint = hints[i];
 
-        let cellColor;
+        let cell = document.getElementById(`cell_${hint.x}_${hint.y}`);
+        console.log(cell);
+        // let cellColor;
 
         if (hint.action == ACTION_CHORD) {
-            cellColor = "#00FF00";
+            cell.style.backgroundImage = `url("${facingDownGreenImgUrl}");`;
+            // cellColor = "#00FF00";
         } else if (hint.prob == 0) {   // mine
-            cellColor = "#FF0000";
+            cell.style.backgroundImage = `url("${facingDownRedImgUrl}");`;
+            // cellColor = "#FF0000";
         } else if (hint.prob == 1) {  // safe
-            cellColor = "#00FF00";
+            cell.style.backgroundImage = `url("${facingDownGreenImgUrl}");`;
+            // cellColor = "#00FF00";
         } else if (hint.dead) {  // uncertain but dead
-            cellColor = "black";
+            cell.style.backgroundImage = `url("${facingDownBlackImgUrl}");`;
+            // cellColor = "black";
         } else {  //uncertain
-            cellColor = "orange";
+            cell.style.backgroundImage = `url("${facingDownOrangeImgUrl}");`;
+            // cellColor = "orange";
             if (firstGuess == 0) {
                 firstGuess = 1;
             }
         }
 
-        let cell = document.getElementById(`cell_${hint.x}_${hint.y}`);
-        cell.style.color=cellColor;
-        cell.style.opacity = '0.5';
+        console.log(facingDownOrangeImgUrl);
+
+        console.log(cell.style);
+
+        // cell.style.color=cellColor;
+        // cell.style.opacity = '0.5';
 
         // if (firstGuess == 1) {
         //     ctxHints.fillStyle = "#00FF00";
