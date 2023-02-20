@@ -20,6 +20,10 @@ const FLAGGED = 11;
 const FLAGGED_WRONG = 12;
 const EXPLODED = 13;
 
+const ACTION_CLEAR = 1;
+const ACTION_FLAG = 2;
+const ACTION_CHORD = 3;
+
 const PLAY_STYLE_FLAGS = 1;
 const PLAY_STYLE_NOFLAGS = 2;
 const PLAY_STYLE_EFFICIENCY = 3;
@@ -134,7 +138,7 @@ function on_click(event, x, y) {
     if (faceElement.className.includes('face-lose')) {
         // game is over
         analysing = false;
-        // window.requestAnimationFrame(() => renderHints([], []));
+        window.requestAnimationFrame(() => renderHints([], []));
         return;
     }
 
@@ -211,10 +215,6 @@ async function downloadAsMBF(e) {
 // render an array of tiles to the canvas
 function renderHints(hints, otherActions) {
 
-    //console.log(hints.length + " hints to render");
-
-    ctxHints.clearRect(0, 0, canvasHints.width, canvasHints.height);
-
     if (hints == null) {
         return;
     }
@@ -224,54 +224,40 @@ function renderHints(hints, otherActions) {
 
         const hint = hints[i];
 
+        let cellColor;
+
         if (hint.action == ACTION_CHORD) {
-            ctxHints.fillStyle = "#00FF00";
+            cellColor = "#00FF00";
         } else if (hint.prob == 0) {   // mine
-            ctxHints.fillStyle = "#FF0000";
+            cellColor = "#FF0000";
         } else if (hint.prob == 1) {  // safe
-            ctxHints.fillStyle = "#00FF00";
+            cellColor = "#00FF00";
         } else if (hint.dead) {  // uncertain but dead
-            ctxHints.fillStyle = "black";
+            cellColor = "black";
         } else {  //uncertain
-            ctxHints.fillStyle = "orange";
+            cellColor = "orange";
             if (firstGuess == 0) {
                 firstGuess = 1;
             }
         }
 
-        ctxHints.globalAlpha = 0.5;
+        let cell = document.getElementById(`cell_${hint.x}_${hint.y}`);
+        cell.style.color=cellColor;
+        cell.style.opacity = '0.5';
 
-        //console.log("Hint X=" + hint.x + " Y=" + hint.y);
-        ctxHints.fillRect(hint.x * TILE_SIZE, hint.y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-        if (firstGuess == 1) {
-            ctxHints.fillStyle = "#00FF00";
-            ctxHints.fillRect((hint.x + 0.25) * TILE_SIZE, (hint.y + 0.25) * TILE_SIZE, 0.5 * TILE_SIZE, 0.5 * TILE_SIZE);
-            firstGuess = 2;
-        }
+        // if (firstGuess == 1) {
+        //     ctxHints.fillStyle = "#00FF00";
+        //     ctxHints.fillRect((hint.x + 0.25) * TILE_SIZE, (hint.y + 0.25) * TILE_SIZE, 0.5 * TILE_SIZE, 0.5 * TILE_SIZE);
+        //     firstGuess = 2;
+        // }
 
     }
 
-     // put percentage over the tile 
+    // TODO(danielatk): fix this!
+    // put percentage over the tile 
     if (overlay != "none") {
+        let font = "14px serif";
 
-        if (TILE_SIZE == 12) {
-            ctxHints.font = "7px serif";
-        } else if (TILE_SIZE == 16) {
-            ctxHints.font = "10px serif";
-        } else if (TILE_SIZE == 20) {
-            ctxHints.font = "12px serif";
-        } else if (TILE_SIZE == 24) {
-            ctxHints.font = "14px serif";
-        } else if (TILE_SIZE == 28) {
-            ctxHints.font = "16px serif";
-        } if (TILE_SIZE == 32) {
-            ctxHints.font = "21px serif";
-        } else {
-            ctxHints.font = "6x serif";
-        }
-
-        ctxHints.globalAlpha = 1;
-        ctxHints.fillStyle = "black";
         for (let tile of board.tiles) {
             if (tile.getHasHint() && tile.isCovered() && !tile.isFlagged() && tile.probability != null) {
                 if (!showHints || (tile.probability != 1 && tile.probability != 0)) {  // show the percentage unless we've already colour coded it
@@ -290,9 +276,9 @@ function renderHints(hints, otherActions) {
                         value1 = value.toFixed(0);
                     }
 
-                    const offsetX = (TILE_SIZE - ctxHints.measureText(value1).width) / 2;
+                    // const offsetX = (TILE_SIZE - ctxHints.measureText(value1).width) / 2;
 
-                    ctxHints.fillText(value1, tile.x * TILE_SIZE + offsetX, (tile.y + 0.7) * TILE_SIZE, TILE_SIZE);
+                    // ctxHints.fillText(value1, tile.x * TILE_SIZE + offsetX, (tile.y + 0.7) * TILE_SIZE, TILE_SIZE);
 
                 }
             }
@@ -304,15 +290,17 @@ function renderHints(hints, otherActions) {
         return;
     }
 
-    ctxHints.globalAlpha = 1;
     // these are from the efficiency play style and are the known moves which haven't been made
     for (let action of otherActions) {
+        let cellColor;
         if (action.action == ACTION_CLEAR) {
-            ctxHints.fillStyle = "#00FF00";
+            cellColor = "#00FF00";
         } else {
-            ctxHints.fillStyle = "#FF0000";
+            cellColor = "#FF0000";
         }
-        ctxHints.fillRect((action.x + 0.35) * TILE_SIZE, (action.y + 0.35) * TILE_SIZE, 0.3 * TILE_SIZE, 0.3 * TILE_SIZE);
+        let cell = document.getElementById(`cell_${action.x}_${action.y}`);
+        cell.style.color=cellColor;
+        // ctxHints.fillRect((action.x + 0.35) * TILE_SIZE, (action.y + 0.35) * TILE_SIZE, 0.3 * TILE_SIZE, 0.3 * TILE_SIZE);
     }
 
 }
@@ -430,7 +418,7 @@ function newBoardFromString(data) {
         document.getElementById('top_area_face').addEventListener('click', (event) => 
             () => {
                 analysing = false;
-                // window.requestAnimationFrame(() => renderHints([], []));
+                window.requestAnimationFrame(() => renderHints([], []));
             }
                 
         );
@@ -486,21 +474,15 @@ async function doAnalysis() {
             options.fullProbability = false;
         }
  
-        //var hints = solver(board, options).actions;  // look for solutions
-
         const solve = await solver(board, options);  // look for solutions
         const hints = solve.actions;
 
         justPressedAnalyse = true;
 
-        // hints format:
-        // x: x coordinate
-        // y: y coordinate
-
-        // window.requestAnimationFrame(() => renderHints(hints, solve.other));
+        window.requestAnimationFrame(() => renderHints(hints, solve.other));
     } else {
         console.log("The board is in an invalid state");
-        // window.requestAnimationFrame(() => renderHints([], []));
+        window.requestAnimationFrame(() => renderHints([], []));
     }
 
     // by delaying removing the logical lock we absorb any secondary clicking of the button / hot key
