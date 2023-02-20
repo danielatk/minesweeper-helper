@@ -84,21 +84,6 @@ showHints.addEventListener('change',
   }
 );
 
-let acceptGuesses = document.getElementById('acceptguesses');
-
-acceptGuesses.addEventListener('marked',
-  function() {
-    chrome.tabs.query({currentWindow: true, active: true}, function (tabs){
-      let activeTab = getCurrentTab(tabs);
-      if (typeof activeTab === 'undefined') {
-        alert('No valid minesweeper game found');
-        return;
-      }
-      chrome.tabs.sendMessage(activeTab.id, {text: 'change-acceptguesses', marked: acceptGuesses.marked});
-    });
-  }
-);
-
 // TODO(danielatk): add listener to each of the dropdowns and checkboxes so that value is always kept track of
 
 function getCurrentTab(tabs) {

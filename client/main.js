@@ -8,10 +8,17 @@ import {Board} from './Board.js';
 console.log('At start of main.js');
 
 let canvasLocked = false;
+let analysing = false;
 
 let BINOMIAL;
 
+let board;
+
 const BOMB = 9;
+const HIDDEN = 10;
+const FLAGGED = 11;
+const FLAGGED_WRONG = 12;
+const EXPLODED = 13;
 
 const PLAY_STYLE_FLAGS = 1;
 const PLAY_STYLE_NOFLAGS = 2;
@@ -19,7 +26,6 @@ const PLAY_STYLE_EFFICIENCY = 3;
 const PLAY_STYLE_NOFLAGS_EFFICIENCY = 4;
 
 let showHints = true;
-let acceptGuesses = false;
 let playStyle = 'Flagging';
 let overlay = 'None';
 
@@ -27,10 +33,6 @@ let justPressedAnalyse = false;
 
 function toggleShowHints(value) {
     showHints = value;
-}
-
-function toggleAcceptGuesses(value) {
-    acceptGuesses = value;
 }
 
 function changePlayStyle(value) {
@@ -45,20 +47,7 @@ async function startup() {
 
     BINOMIAL = new Binomial(50000, 200);
 
-    // window.addEventListener("beforeunload", (event) => exiting(event));
-
-    // // add a listener for mouse clicks on the canvas
-    // canvas.addEventListener("mousedown", (event) => on_click(event));
-    // canvas.addEventListener("mouseup", (event) => mouseUpEvent(event));
     // canvas.addEventListener('mousemove', (event) => followCursor(event));
-    // canvas.addEventListener('wheel', (event) => on_mouseWheel(event));
-    // canvas.addEventListener('mouseenter', (event) => on_mouseEnter(event));
-    // canvas.addEventListener('mouseleave', (event) => on_mouseLeave(event));
-
-    // docMinesLeft.addEventListener('wheel', (event) => on_mouseWheel_minesLeft(event));
-
-    // // add some hot key 
-    // document.addEventListener('keyup', event => { keyPressedEvent(event) });
 
     // initialise the solver
     await solver();
@@ -66,192 +55,110 @@ async function startup() {
     console.log('Started Minesweeper Helper');
 }
 
+function resetBoard() {
+    let boardData = getBoard();
+
+    newBoardFromString(boardData);
+}
+
+function getBoard() {
+    let width = -1;
+    let height = -1;
+    let mines = -1;
+
+    let currentLevel = document.getElementsByClassName('level-select-link active')[0];
+
+    switch (currentLevel.textContent) {
+        case 'Easy':
+        case 'Beginner':
+            width = 9;
+            height = 9;
+            mines = 10;
+            break;
+        case 'Medium':
+        case 'Intermediate':
+            width = 16;
+            height = 16;
+            mines = 40;
+            break;
+        case 'Hard':
+        case 'Expert':
+            width = 30;
+            height = 16;
+            mines = 99;
+            break;
+        case 'Evil':
+            width = 30;
+            height = 20;
+            mines = 130;
+            break;
+        default:
+            break;
+    }
+
+    if (width === -1) {
+        // custom mode
+        width = document.getElementById('custom_width').value;
+        height = document.getElementById('custom_height').value;
+        mines = document.getElementById('custom_mines').value;
+    }
+
+    let data = `${width}x${height}x${mines}\n`;
+    for (let i = 0; i < height; i++) {
+        for (let j = 0; j < width; j++) {
+            let cell = document.getElementById(`cell_${j}_${i}`);
+            let cellStatus = 'H';
+            if (cell.className.includes('hd_flag')) {
+                cellStatus = 'F';
+            } else if (cell.className.includes('hd_type')) {
+                cellStatus = parseInt(cell.className.slice(-1));
+            }
+            data = data + cellStatus;
+        }
+        data = data + '\n';
+    }
+    return data;
+}
+
 // stuff to do when we click on the board
-function on_click(event) {
+function on_click(event, x, y) {
+
+    if (!analysing) {
+        // only check clicks if board is being analysed
+        return;
+    }
 
     //console.log("Click event at X=" + event.offsetX + ", Y=" + event.offsetY);
 
-    if (board.isGameover()) {
-        console.log("The game is over - no action to take");
+    let faceElement = document.getElementById('top_area_face');
+    if (faceElement.className.includes('face-lose')) {
+        // game is over
+        analysing = false;
+        // window.requestAnimationFrame(() => renderHints([], []));
         return;
     }
 
     if (canvasLocked) {
         console.log("The canvas is logically locked - this happens while the previous click is being processed");
         return;
-    } 
+    }
 
-    const row = Math.floor(event.offsetY / TILE_SIZE);
-    const col = Math.floor(event.offsetX / TILE_SIZE);
+    const button = event.which
 
-    //console.log("Resolved to Col=" + col + ", row=" + row);
+    const tile = board.getTileXY(x, y);
 
-    let message;
-
-    if (row >= board.height || row < 0 || col >= board.width || col < 0) {
-        console.log("Click outside of game boundaries!!");
+    // left mouse button
+    if (button == 1 && tile.isFlagged()) { 
+        // no point clicking on an tile with a flag on it
+        console.log("Tile has a flag on it - no action to take");
         return;
-
-    } else if (analysisMode) {  // analysis mode
-
-        const button = event.which
-
-        const tile = board.getTileXY(col, row);
-
-        let tiles = [];
-
-        if (button == 1) {   // left mouse button
-
-            if (tile.isFlagged()) {  // no point clicking on an tile with a flag on it
-                console.log("Tile has a flag on it - no action to take");
-                return;
-            }
-
-            if (!board.isStarted()) {
-                 board.setStarted();
-            }
-
-            // allow for dragging and remember the tile we just changed
-            dragging = true;
-            dragTile = tile;
-
-            if (tile.isCovered()) {
-                const flagCount = board.adjacentFoundMineCount(tile);
-                tile.setValue(flagCount);
-            } else {
-                tile.setCovered(true);
-            }
-
-            tiles.push(tile);
-
-        } else if (button == 3) {  // right mouse button
-
-            // toggle the flag and return the tiles which need to be redisplayed
-            tiles = analysis_toggle_flag(tile);
-
-            console.log("Number of bombs " + board.num_bombs + "  bombs left to find " + board.bombs_left);
-
-        } else {
-            console.log("Mouse button " + button + " ignored");
-            return;
-        }
-
-        // update the graphical board
-        window.requestAnimationFrame(() => renderTiles(tiles));
-
-    } else {  // play mode
-        const button = event.which
-
-        const tile = board.getTileXY(col, row);
-
-        if (button == 1) {   // left mouse button
-
-            if (tile.isFlagged()) {  // no point clicking on an tile with a flag on it
-                console.log("Tile has a flag on it - no action to take");
-                return;
-            }
-
-            if (!board.isStarted()) {
-                //message = {"id" : "new", "index" : board.xy_to_index(col, row), "action" : 1};
-                board.setStarted();
-            }
-
-            //if (!tile.isCovered()) {  // no point clicking on an already uncovered tile
-            //	console.log("Tile is already revealed - no action to take");
-            //	return;
-            //}
-
-            if (!tile.isCovered()) {  // clicking on a revealed tile is considered chording
-                if (board.canChord(tile)) {
-                    message = { "header": board.getMessageHeader(), "actions": [{ "index": board.xy_to_index(col, row), "action": 3 }] }; //chord
-                } else {
-                    console.log("Tile is not able to be chorded - no action to take");
-                    return;
-                }
-
-            } else {
-                message = { "header": board.getMessageHeader(), "actions": [{ "index": board.xy_to_index(col, row), "action": 1 }] }; // click
-            }
-
-        } else if (button == 3) {  // right mouse button
-
-            if (!tile.isCovered()) {  // no point flagging an already uncovered tile
-                return;
-            }
-
-            if (!board.isStarted()) {
-                console.log("Can't flag until the game has started!");
-                return;
-            } else {
-                message = { "header": board.getMessageHeader(), "actions": [{ "index": board.xy_to_index(col, row), "action": 2 }] };
-            }
-
-        } else {
-            console.log("Mouse button " + button + " ignored");
-            return;
-        }
     }
 
-    // we don't need to send a message if we are drawing a board in analysis mode
-    if (!analysisMode) {
-        // one last check before we send the message
-        if (canvasLocked) {
-            console.log("The canvas is logically locked");
-            return;
-        } else {
-            canvasLocked = true;
-        }
-
-        justPressedAnalyse = false;
-
-        sendActionsMessage(message);
-    }
-
-}
-
-// launch a floating window to store/retrieve from local storage
-function openLocalStorage() {
-
-    console.log("There are " + localStorage.length + " items in local storage");
-
-    // remove all the options from the selection
-    localStorageSelection.length = 0;
-
-    // iterate localStorage
-    for (let i = 0; i < localStorage.length; i++) {
-
-        // set iteration key name
-        const key = localStorage.key(i);
-
-        const option = document.createElement("option");
-        option.text = key;
-        option.value = key;
-        localStorageSelection.add(option);
-
-        // use key name to retrieve the corresponding value
-        const value = localStorage.getItem(key);
-
-        // console.log the iteration key and value
-        console.log('Key: ' + key + ', Value: ' + value);
-
-    }
-
-    localStorageModal.style.display = "block";
-
-}
-
-function closeLocalStorage() {
-
-    localStorageModal.style.display = "none";
-
-}
-
-function saveLocalStorage() {
-
-    const key = localStorageSelection.value;
-
-    console.log("Saving board position to local storage key '" + key + "'");
-
+    // for all other cases we need to read new board
+    resetBoard();
+    // analyse new board
+    doAnalysis();
+    
 }
 
 // download as MBF
@@ -299,41 +206,6 @@ async function downloadAsMBF(e) {
 
     downloadHyperlink.download = filename;
 
-}
-
-function switchToAnalysis(doAnalysis) {
-
-    if (doAnalysis) {
-        gameBoard = board;
-        board = analysisBoard;
-
-        showDownloadLink(true, "")  // display the hyperlink
-
-        title.innerHTML = "Minesweeper analyser";  // change the title
-        switchButton.innerHTML = "Switch to Player";
-    } else {
-        analysisBoard = board;
-        board = gameBoard;
-
-        showDownloadLink(false, "")  // hide the hyperlink (we don't have the url until we play a move - this could be improved)
-
-        title.innerHTML = "Minesweeper player"; // change the title
-        switchButton.innerHTML = "Switch to Analyser";
-    }
-
-    changeTileSize();
-
-    //resizeCanvas(board.width, board.height);
-
-    //browserResized();
-
-    renderHints([]);  // clear down hints
-
-    //renderTiles(board.tiles); // draw the board
-
-    updateMineCount(board.bombs_left);  // reset the mine count
-
-    analysisMode = doAnalysis;
 }
 
 // render an array of tiles to the canvas
@@ -480,56 +352,6 @@ function renderTiles(tiles) {
 
 }
 
-function updateMineCount(minesLeft) {
-
-    let work = minesLeft;
-    const digits = getDigitCount(minesLeft);
-
-    let position = digits - 1;
-
-    docMinesLeft.width = DIGIT_WIDTH * digits;
-
-    for (let i = 0; i < DIGITS; i++) {
-
-        const digit = work % 10;
-        work = (work - digit) / 10;
-
-        ctxBombsLeft.drawImage(led_images[digit], DIGIT_WIDTH * position + 2, 2, DIGIT_WIDTH - 4, DIGIT_HEIGHT - 4);
-
-        position--;
-    }
-
-}
-
-function getDigitCount(mines) {
-
-    let digits;
-    if (mines < 1000) {
-        digits = 3;
-    } else if (mines < 10000) {
-        digits = 4;
-    } else {
-        digits = 5;
-    }
-
-    return digits;
-}
-
-// display or hide the download link 
-function showDownloadLink(show, url) {
-
-    if (show) {
-        downloadHyperlink.style.display = "block";
-        if (url != null) {
-            downloadHyperlink.href = url;
-        }
-
-    } else {
-        downloadHyperlink.style.display = "none";
-    }
-
-}
-
 function newBoardFromString(data) {
 
     const lines = data.split('\n');
@@ -556,7 +378,7 @@ function newBoardFromString(data) {
         return;
     }
 
-    const board = new Board(1, width, height, mines);
+    const newBoard = new Board(1, width, height, mines);
 
     for (let y = 0; y < height; y++) {
         const line = lines[y + 1];
@@ -564,11 +386,11 @@ function newBoardFromString(data) {
         for (let x = 0; x < width; x++) {
 
             const char = line.charAt(x);
-            const tile = board.getTileXY(x, y);
+            const tile = newBoard.getTileXY(x, y);
 
             if (char == 'F') {
                 tile.toggleFlag();
-                board.bombs_left--;
+                newBoard.bombs_left--;
             } else if (char == '0') {
                 tile.setValue(0);
             } else if (char == '1') {
@@ -593,7 +415,31 @@ function newBoardFromString(data) {
         }
     }
 
-    return board;
+    if (board === null || typeof board === 'undefined') {
+        // setup tile listeners only if hasn't been done yet
+        for (let i = 0; i < newBoard.height; i++) {
+            for (let j = 0; j < newBoard.width; j++) {
+                let cell = document.getElementById(`cell_${j}_${i}`);
+                cell.addEventListener('click', (event) => 
+                    on_click(event, j, i)
+                );
+            }
+        }
+
+        // setup face listener only if hasn't been done yet
+        document.getElementById('top_area_face').addEventListener('click', (event) => 
+            () => {
+                analysing = false;
+                // window.requestAnimationFrame(() => renderHints([], []));
+            }
+                
+        );
+    }
+
+
+    board = newBoard;
+
+    return newBoard;
 }
 
 async function sleep(msec) {
@@ -601,6 +447,8 @@ async function sleep(msec) {
 }
 
 async function doAnalysis(board) {
+
+    analysing = true;
 
     if (canvasLocked) {
         console.log("Already analysing... request rejected");
@@ -658,49 +506,6 @@ async function doAnalysis(board) {
     // by delaying removing the logical lock we absorb any secondary clicking of the button / hot key
     setTimeout(function () { canvasLocked = false; }, 200);
 }
-
-async function checkBoard() {
-
-    if (!analysisMode) {
-        return;
-    }
-
-    // this will set all the obvious mines which makes the solution counter a lot more efficient on very large boards
-    board.resetForAnalysis();
- 
-    const currentBoardHash = board.getHashValue();
-
-    if (currentBoardHash == previousBoardHash) {
-        return;
-    } 
-
-    previousBoardHash = currentBoardHash;
-
-    console.log("Checking board with hash " + currentBoardHash);
-
-    board.findAutoMove();
-    const solutionCounter = await solver.countSolutions(board);
-    board.resetForAnalysis();
-
-    if (solutionCounter.finalSolutionsCount != 0) {
-        analysisButton.disabled = false;
-        //console.log("The board has" + solutionCounter.finalSolutionsCount + " possible solutions");
-        let logicText;
-        if (solutionCounter.clearCount != 0) {
-            logicText = "There are safe tile(s). ";
-        } else {
-            logicText = "There are no safe tiles. ";
-        }
-
-        console.log("The board is valid. " + board.getFlagsPlaced() + " Mines placed. " + logicText + formatSolutions(solutionCounter.finalSolutionsCount));
-        
-    } else {
-        analysisButton.disabled = true;
-        console.log("The board is in an invalid state. " + board.getFlagsPlaced() + " Mines placed. ");
-    }
-
-}
-
 
 // draw a tile to the canvas
 function draw(x, y, tileType) {
@@ -769,485 +574,4 @@ function followCursor(e) {
 
 }
 
-function mouseUpEvent(e) {
-    if (dragging && e.which == 1) {
-        console.log("Dragging stopped due to  mouse up event");
-        dragging = false;
-    }
-}
-
-function on_mouseEnter(e) {
-
-    tooltip.style.display = "inline-block";
- 
-}
-
-function on_mouseLeave(e) {
-
-    hoverTile = null;
-
-    tooltip.style.display = "none";
-
-    if (dragging) {
-        console.log("Dragging stopped due to mouse off canvas");
-        dragging = false;
-    }
-
-}
-
-/**
- * toggle the flag and update any adjacent tiles
- * Return the tiles which need to be redisplayed
- */
-function analysis_toggle_flag(tile) {
-
-    const tiles = [];
-
-    if (!tile.isCovered()) {
-        tile.setCovered(true);
-    }
-
-    let delta;
-    if (tile.isFlagged()) {
-        delta = -1;
-        tile.foundBomb = false;  // in analysis mode we believe the flags are mines
-    } else {
-        delta = 1;
-        tile.foundBomb = true;  // in analysis mode we believe the flags are mines
-    }
-
-    // if we have locked the mine count then adjust the bombs left 
-    if (lockMineCount.checked) {
-        if (delta == 1 && board.bombs_left == 0) {
-            console.log("Can't reduce mines to find to below zero whilst the mine count is locked");
-            return tiles;
-        }
-        board.bombs_left = board.bombs_left - delta;
-        window.requestAnimationFrame(() => updateMineCount(board.bombs_left));
-
-    } else {   // otherwise adjust the total number of bombs
-        const tally = board.getFlagsPlaced();
-        board.num_bombs = tally + board.bombs_left + delta;
-    }
-
-    // if the adjacent tiles values are in step then keep them in step
-    const adjTiles = board.getAdjacent(tile);
-    for (let i = 0; i < adjTiles.length; i++) {
-        const adjTile = adjTiles[i];
-        const adjFlagCount = board.adjacentFlagsPlaced(adjTile);
-        if (adjTile.getValue() == adjFlagCount) {
-            adjTile.setValueOnly(adjFlagCount + delta);
-            tiles.push(adjTile);
-        }
-    }
-
-    tile.toggleFlag();
-    tiles.push(tile);
-
-    return tiles;
-}
-
-
-function on_mouseWheel(event) {
-
-    if (!analysisMode) {
-        return;
-    }
-
-    //board.resetForAnalysis();
-
-    //console.log("Mousewheel event at X=" + event.offsetX + ", Y=" + event.offsetY);
-
-    const row = Math.floor(event.offsetY / TILE_SIZE);
-    const col = Math.floor(event.offsetX / TILE_SIZE);
-
-    //console.log("Resolved to Col=" + col + ", row=" + row);
-
-    const delta = Math.sign(event.deltaY);
-
-    const tile = board.getTileXY(col, row);
-
-    const flagCount = board.adjacentFoundMineCount(tile);
-    const covered = board.adjacentCoveredCount(tile);
-
-    let newValue;
-    if (tile.isCovered()) {
-        newValue = flagCount;
-    } else {
-        newValue = tile.getValue() + delta;
-    }
- 
-    if (newValue < flagCount) {
-        newValue = flagCount + covered;
-    } else if (newValue > flagCount + covered) {
-        newValue = flagCount;
-    }
-
-    tile.setValue(newValue);
-
-     // update the graphical board
-    window.requestAnimationFrame(() => renderTiles([tile]));
-
-}
-
-function on_mouseWheel_minesLeft(event) {
-
-    if (!analysisMode) {
-        return;
-    }
-
-    //console.log("Mousewheel event at X=" + event.offsetX + ", Y=" + event.offsetY);
-
-    const delta = Math.sign(event.deltaY);
-
-    const digit = Math.floor(event.offsetX / DIGIT_WIDTH);
-
-    //console.log("Mousewheel event at X=" + event.offsetX + ", Y=" + event.offsetY + ", digit=" + digit);
-
-    let newCount = board.bombs_left;
-
-    const digits = getDigitCount(newCount);
-
-    if (digit == digits - 1) {
-        newCount = newCount + delta; 
-    } else if (digit == digits - 2) {
-        newCount = newCount + delta * 10;
-    } else {
-        newCount = newCount + delta * 10;
-    }
-
-    const flagsPlaced = board.getFlagsPlaced();
-
-    if (newCount < 0) {
-        board.bombs_left = 0;
-        board.num_bombs = flagsPlaced;
-    } else if (newCount > 9999) {
-        board.bombs_left = 9999;
-        board.num_bombs = 9999 + flagsPlaced;
-    } else {
-        board.bombs_left = newCount;
-        board.num_bombs = newCount + flagsPlaced;
-    }
-
-    window.requestAnimationFrame(() => updateMineCount(board.bombs_left));
-
-}
-
-// Prevent default behavior (Prevent file from being opened)
-function dragOverHandler(ev) {
-    //console.log('File(s) in drop zone');
-    ev.preventDefault();
-}
-
-function buildMessageFromActions(actions, safeOnly) {
-
-    const message = { "header": board.getMessageHeader(), "actions": [] };
-
-    for (let i = 0; i < actions.length; i++) {
-
-        const action = actions[i];
-
-        if (action.action == ACTION_CHORD) {
-            message.actions.push({ "index": board.xy_to_index(action.x, action.y), "action": 3 });
-
-        } else if (action.prob == 0) {   // zero safe probability == mine
-            message.actions.push({ "index": board.xy_to_index(action.x, action.y), "action": 2 });
-
-        } else {   // otherwise we're trying to clear
-            if (!safeOnly || safeOnly && action.prob == 1) {
-                message.actions.push({ "index": board.xy_to_index(action.x, action.y), "action": 1 });
-            }
-        }
-    }
-
-    return message;
-
-}
-
-
-// send a JSON message to the server describing what action the user made
-async function sendActionsMessage(message) {
-
-    const outbound = JSON.stringify(message);
-
-    console.log("==> " + outbound);
-
-    // either play locally or send to server
-    let reply;
-    if (PLAY_CLIENT_SIDE) {
-        reply = await handleActions(message);
-    } else {
-        const json_data = await fetch("/data", {
-            method: "POST",
-            body: outbound,
-            headers: new Headers({
-                "Content-Type": "application/json"
-            })
-        });
-
-        reply = await json_data.json();
-    }
-
-    console.log("<== " + JSON.stringify(reply));
-    //console.log(reply.header);
-
-    if (board.id != reply.header.id) {
-        console.log("Game when message sent " + reply.header.id + " game now " + board.id + " ignoring reply");
-        canvasLocked = false;
-        return;
-    }
-
-    if (board.seed == 0) {
-        board.seed = reply.header.seed;
-        console.log("Setting game seed to " + reply.header.seed);
-        seedText.value = board.seed;
-    }
-
-    if (reply.header.status == "lost") { 
-        document.getElementById("canvas").style.cursor = "default";
-        board.setGameLost();
-    } else if (reply.header.status == "won") {
-        document.getElementById("canvas").style.cursor = "default";
-        board.setGameWon();
-    } 
-
-    if (reply.tiles.length == 0) {
-        console.log("Unable to continue");
-        document.getElementById("canvas").style.cursor = "default";
-        canvasLocked = false;
-        return;
-    }
-
-    // add the hyperlink the hyperlink
-    if (reply.header.url != null) {
-        showDownloadLink(true, reply.header.url);
-    }
- 
-    // translate the message and redraw the board
-    const tiles = [];
-    const prevMineCounter = board.bombs_left;
-
-    // apply the changes to the logical board
-    for (let i = 0; i < reply.tiles.length; i++) {
-
-        const target = reply.tiles[i];
-
-        const index = target.index;
-        const action = target.action;
-
-        const tile = board.getTile(index);
-
-        if (action == 1) {    // reveal value on tile
-            tile.setValue(target.value);
-            tiles.push(tile);
-
-        } else if (action == 2) {  // add or remove flag
-            if (target.flag != tile.isFlagged()) {
-                tile.toggleFlag();
-                if (tile.isFlagged()) {
-                    board.bombs_left--;
-                } else {
-                    board.bombs_left++;
-                }
-                tiles.push(tile);
-            }
-
-        } else if (action == 3) {  // a tile which is a mine (these get returned when the game is lost)
-            board.setGameLost();
-            tile.setBomb(true);
-            tiles.push(tile);
-
-        } else if (action == 4) {  // a tile which is a mine and is the cause of losing the game
-            board.setGameLost();
-            tile.setBombExploded();
-            tiles.push(tile);
-
-        } else if (action == 5) {  // a which is flagged but shouldn't be
-            tile.setBomb(false);
-            tiles.push(tile);
-
-        } else {
-            console.log("action " + action + " is not valid");
-        }
-
-    }
-
-    // update the mine count if a flag has changed
-    if (prevMineCounter != board.bombs_left) {
-        window.requestAnimationFrame(() => updateMineCount(board.bombs_left));
-    }
-
-    // update the graphical board
-    window.requestAnimationFrame(() => renderTiles(tiles));
-
-    if (board.isGameover()) {
-        console.log("Game is over according to the server");
-        canvasLocked = false;
-        window.requestAnimationFrame(() => renderHints([], []));  // clear the hints overlay
-
-        const value3BV = reply.header.value3BV;
-        const solved3BV = reply.header.solved3BV;
-        const actionsMade = reply.header.actions;
-
-        let efficiency;
-        if (reply.header.status == "won") {
-            efficiency = (100 * value3BV / actionsMade).toFixed(2) + "%";
-        } else {
-            efficiency = (100 * solved3BV / actionsMade).toFixed(2) + "%";
-        }
-
-        // if the current game is no longer in play then no need to remember the games details
-        currentGameDescription = null;
-        localStorage.removeItem(GAME_DESCRIPTION_KEY);
-
-        console.log("The game has been " + reply.header.status + ". 3BV: " + solved3BV + "/" + value3BV + ",  Actions: " + actionsMade + ",  Efficiency: " + efficiency);
-        return;
-    }
-
-    const solverStart = Date.now();
-
-    let assistedPlay = docFastPlay.checked;
-    let assistedPlayHints;
-    if (assistedPlay) {
-        assistedPlayHints = board.findAutoMove();
-        if (assistedPlayHints.length == 0) {
-            assistedPlay = false;
-        }
-    } else {
-        assistedPlayHints = [];
-    }
-
-    // do we want to show hints
-    if (showHints || autoPlayCheckBox.checked || assistedPlayHints.length != 0 || overlay != "none") {
-
-        document.getElementById("canvas").style.cursor = "wait";
-
-        const options = {};
-        if (playStyle == "flag") {
-            options.playStyle = PLAY_STYLE_FLAGS;
-        } else if (playStyle == "noflag") {
-            options.playStyle = PLAY_STYLE_NOFLAGS;
-        } else if (playStyle == "eff") {
-            options.playStyle = PLAY_STYLE_EFFICIENCY;
-        } else {
-            options.playStyle = PLAY_STYLE_NOFLAGS_EFFICIENCY;
-        } 
-
-        if (overlay != "none") {
-            options.fullProbability = true;
-        } else {
-            options.fullProbability = false;
-        }
-
-        let hints;
-        let other;
-        if (assistedPlay) {
-            hints = assistedPlayHints;
-            other = [];
-        } else {
-            const solve = await solver(board, options);  // look for solutions
-            hints = solve.actions;
-            other = solve.other;
-        }
-
-        const solverDuration = Date.now() - solverStart;
-
-        if (board.id != reply.header.id) {
-            console.log("Game when Solver started " + reply.header.id + " game now " + board.id + " ignoring solver results");
-            canvasLocked = false;
-            return;
-        }
-
-        //console.log("Rendering " + hints.length + " hints");
-        //setTimeout(function () { window.requestAnimationFrame(() => renderHints(hints)) }, 10);  // wait 10 milliseconds to prevent a clash with the renderTiles redraw
-
-        // only show the hints if the hint box is checked
-        if (showHints) {
-            window.requestAnimationFrame(() => renderHints(hints, other));
-        } else {
-            window.requestAnimationFrame(() => renderHints([], []));  // clear the hints overlay
-            console.log("Press the 'Analyse' button to see the solver's suggested move.");
-        }
-
-        if (autoPlayCheckBox.checked || assistedPlay) {
-            if (hints.length > 0 && (hints[0].prob == 1 || hints[0].prob == 0)) {
-                const message = buildMessageFromActions(hints, true);  // send all safe actions
-
-                const wait = Math.max(0, (CYCLE_DELAY - solverDuration));
-
-                setTimeout(function () { sendActionsMessage(message) }, wait);
-
-            } else if (hints.length > 0 && acceptGuesses) { // if we are accepting guesses
-
-                //const hint = [];
-                //hint.push(hints[0]);
-
-                const message = buildMessageFromActions([hints[0]], false); // if we are guessing send only the first guess
-
-                const wait = Math.max(0, (CYCLE_DELAY - solverDuration));
-
-                setTimeout(function () { sendActionsMessage(message) }, wait);
-
-            } else {
-                document.getElementById("canvas").style.cursor = "default";
-                canvasLocked = false;
-                currentGameDescription = reply.header;
-            }
-        } else {
-            document.getElementById("canvas").style.cursor = "default";
-            canvasLocked = false;
-            currentGameDescription = reply.header;
-        }
-
-    } else {
-        canvasLocked = false;
-        window.requestAnimationFrame(() => renderHints([], []));  // clear the hints overlay
-        document.getElementById("canvas").style.cursor = "default";
-        console.log("The solver is not running. Press the 'Analyse' button to see the solver's suggested move.");
-        currentGameDescription = reply.header;
-    }
- 
-    return reply;
-
-}
-
-// load an image 
-function load_image(image_path) {
-    const image = new Image();
-    image.addEventListener('load', function () {
-
-        console.log("An image has loaded: " + image_path);
-        imagesLoaded++;
-        if (imagesLoaded == images.length + led_images.length) {
-            startup();
-        }
-
-    }, false);
-    image.src = image_path;
-    return image;
-}
-
-function load_images() {
-
-    console.log('Loading images...');
-
-    for (let i = 0; i <= 8; i++) {
-        const file_path = "resources/images/" + i.toString() + ".png";
-        images.push(load_image(file_path));
-        const led_path = "resources/images/led" + i.toString() + ".svg";
-        led_images.push(load_image(led_path));
-    }
-
-    led_images.push(load_image("resources/images/led9.svg"));
-
-    images.push(load_image("resources/images/bomb.png"));
-    images.push(load_image("resources/images/facingDown.png"));
-    images.push(load_image("resources/images/flagged.png"));
-    images.push(load_image("resources/images/flaggedWrong.png"));
-    images.push(load_image("resources/images/exploded.png"));
-
-    console.log(images.length + ' Images Loaded');
-
-}
-
-export {startup, doAnalysis, newBoardFromString, toggleShowHints, toggleAcceptGuesses, changePlayStyle, changeOverlay};
+export {startup, doAnalysis, newBoardFromString, toggleShowHints, changePlayStyle, changeOverlay};

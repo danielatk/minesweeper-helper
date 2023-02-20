@@ -41,9 +41,6 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
         case 'change-showhints':
             contentMain.toggleShowHints(msg.marked);
             break;
-        case 'change-acceptguesses':
-            contentMain.toggleAcceptGuesses(msg.marked);
-            break;
         default:
             break;
     }
