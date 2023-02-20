@@ -28,9 +28,8 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
             sendResponse(board);
             break;
         case 'analyse':
-            let boardData = getBoard();
-            board = contentMain.newBoardFromString(boardData);
-            contentMain.doAnalysis(board);
+            contentMain.resetBoard();
+            contentMain.doAnalysis();
             break;
         case 'change-overlay':
             contentMain.changeOverlay(msg.value.toLowerCase());

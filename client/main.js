@@ -446,7 +446,7 @@ async function sleep(msec) {
     return new Promise(resolve => setTimeout(resolve, msec));
 }
 
-async function doAnalysis(board) {
+async function doAnalysis() {
 
     analysing = true;
 
@@ -574,4 +574,4 @@ function followCursor(e) {
 
 }
 
-export {startup, doAnalysis, newBoardFromString, toggleShowHints, changePlayStyle, changeOverlay};
+export {startup, doAnalysis, newBoardFromString, toggleShowHints, changePlayStyle, changeOverlay, resetBoard};
