@@ -1,6 +1,6 @@
 "use strict";
 
-
+import {SolutionCounter} from './SolutionCounter.js';
 
 class FiftyFiftyHelper {
 
@@ -21,6 +21,81 @@ class FiftyFiftyHelper {
 		this.deadTiles = deadTiles;
 		this.witnessedTiles = witnessedTiles;
 		this.minesLeft = minesLeft;
+
+    }
+
+	countSolutions(board, notMines) {
+
+        // find all the tiles which are revealed and have un-revealed / un-flagged adjacent squares
+        const allCoveredTiles = [];
+        const witnesses = [];
+        const witnessed = [];
+
+        let minesLeft = board.num_bombs;
+        let squaresLeft = 0;
+
+        const work = new Set();  // use a map to deduplicate the witnessed tiles
+
+        for (let i = 0; i < board.tiles.length; i++) {
+
+            const tile = board.getTile(i);
+
+            if (tile.isSolverFoundBomb()) {
+                minesLeft--;
+                continue;  // if the tile is a flag then nothing to consider
+            } else if (tile.isCovered()) {
+                squaresLeft++;
+                allCoveredTiles.push(tile);
+                continue;  // if the tile hasn't been revealed yet then nothing to consider
+            }
+
+            const adjTiles = board.getAdjacent(tile);
+
+            let needsWork = false;
+            let minesFound = 0;
+            for (let j = 0; j < adjTiles.length; j++) {
+                const adjTile = adjTiles[j];
+                if (adjTile.isSolverFoundBomb()) {
+                    minesFound++;
+                } else if (adjTile.isCovered()) {
+                    needsWork = true;
+                    work.add(adjTile.index);
+                }
+            }
+
+            // if a witness needs work (still has hidden adjacent tiles) or is broken then add it to the mix
+            if (needsWork || minesFound > tile.getValue()) {
+                witnesses.push(tile);
+            }
+
+        }
+
+        // generate an array of tiles from the map
+        for (let index of work) {
+            const tile = board.getTile(index);
+            tile.setOnEdge(true);
+            witnessed.push(tile);
+        }
+
+        //console.log("tiles left = " + squaresLeft);
+        //console.log("mines left = " + minesLeft);
+        //console.log("Witnesses  = " + witnesses.length);
+        //console.log("Witnessed  = " + witnessed.length);
+
+        var solutionCounter = new SolutionCounter(board, witnesses, witnessed, squaresLeft, minesLeft);
+
+        // let the solution counter know which tiles mustn't contain mines
+        if (notMines != null) {
+            for (let tile of notMines) {
+                if (!solutionCounter.setMustBeEmpty(tile)) {
+                    writeToConsole("Tile " + tile.asText() + " failed to set must be empty");
+                }
+            }
+        }
+
+        solutionCounter.process();
+
+        return solutionCounter;
 
     }
 
@@ -56,7 +131,7 @@ class FiftyFiftyHelper {
                 // is both hidden tiles being mines a valid option?
                 tile1.setFoundBomb();
                 tile2.setFoundBomb();
-                var counter = solver.countSolutions(this.board, null);
+                var counter = this.countSolutions(this.board, null);
                 tile1.unsetFoundBomb();
                 tile2.unsetFoundBomb();
 
@@ -92,7 +167,7 @@ class FiftyFiftyHelper {
                 // is both hidden tiles being mines a valid option?
                 tile1.setFoundBomb();
                 tile2.setFoundBomb();
-                var counter = solver.countSolutions(this.board, null);
+                var counter = this.countSolutions(this.board, null);
                 tile1.unsetFoundBomb();
                 tile2.unsetFoundBomb();
 
@@ -212,7 +287,7 @@ class FiftyFiftyHelper {
 					}
 
 					// see if the position is valid
-					const counter = solver.countSolutions(this.board, noMines);
+					const counter = this.countSolutions(this.board, noMines);
 
 					// remove the mines
 					for (let tile of mines) {
@@ -320,3 +395,4 @@ class FiftyFiftyHelper {
 
 }
 
+export {FiftyFiftyHelper};

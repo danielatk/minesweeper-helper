@@ -3,6 +3,13 @@
  */
 'use strict';
 
+const ACTION_CLEAR = 1;
+const ACTION_FLAG = 2;
+const ACTION_CHORD = 3;
+
+import {Tile} from './Tile.js';
+import {Action} from './Solver.js';
+
 class Board {
 	
 	constructor(id, width, height, num_bombs) {
@@ -84,7 +91,7 @@ class Board {
 	
 	getTileXY(x, y) {
 
-		if (x < 0 || x >= this.width || y < 0 || y >= height) {
+		if (x < 0 || x >= this.width || y < 0 || y >= this.height) {
 			return null;
         }
 
@@ -401,3 +408,5 @@ class Board {
     }
 
 }
+
+export {Board};

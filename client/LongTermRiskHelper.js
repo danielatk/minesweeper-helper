@@ -1,5 +1,11 @@
 "use strict";
 
+import {SolutionCounter} from './SolutionCounter.js';
+
+const power10n = [BigInt(1), BigInt(10), BigInt(100), BigInt(1000), BigInt(10000), BigInt(100000), BigInt(1000000)];
+const power10 = [1, 10, 100, 1000, 10000, 100000, 1000000];
+const maxSolutionsDisplay = BigInt("100000000000000000");
+
 class LongTermRiskHelper {
 
 	constructor(board, pe, minesLeft, options)  {
@@ -112,7 +118,7 @@ class LongTermRiskHelper {
 
 				if (result != null) {
 					let influenceTally = this.addNotNull(BigInt(0), result);
-					//const influence = divideBigInt(influenceTally, this.currentPe.finalSolutionsCount, 4); 
+					//const influence = this.divideBigInt(influenceTally, this.currentPe.finalSolutionsCount, 4); 
 					//this.writeToConsole("Tile " + tile1.asText() + " and " + tile2.asText() + " have horiontal 2-tile 50/50 influence " + influence);
 
 					this.addInfluence(influenceTally, result.enablers, [tile1, tile2]);
@@ -138,7 +144,7 @@ class LongTermRiskHelper {
 				if (result != null) {
 					
 					let influenceTally = this.addNotNull(BigInt(0), result);
-					//const influence = divideBigInt(influenceTally, this.currentPe.finalSolutionsCount, 4); 
+					//const influence = this.divideBigInt(influenceTally, this.currentPe.finalSolutionsCount, 4); 
 					//this.writeToConsole("Tile " + tile1.asText() + " and " + tile2.asText() + " have vertical 2-tile 50/50 influence " + influence);
 
 					this.addInfluence(influenceTally, result.enablers, [tile1, tile2]);
@@ -150,6 +156,81 @@ class LongTermRiskHelper {
 			}
 		}
 	}
+
+	countSolutions(board, notMines) {
+
+        // find all the tiles which are revealed and have un-revealed / un-flagged adjacent squares
+        const allCoveredTiles = [];
+        const witnesses = [];
+        const witnessed = [];
+
+        let minesLeft = board.num_bombs;
+        let squaresLeft = 0;
+
+        const work = new Set();  // use a map to deduplicate the witnessed tiles
+
+        for (let i = 0; i < board.tiles.length; i++) {
+
+            const tile = board.getTile(i);
+
+            if (tile.isSolverFoundBomb()) {
+                minesLeft--;
+                continue;  // if the tile is a flag then nothing to consider
+            } else if (tile.isCovered()) {
+                squaresLeft++;
+                allCoveredTiles.push(tile);
+                continue;  // if the tile hasn't been revealed yet then nothing to consider
+            }
+
+            const adjTiles = board.getAdjacent(tile);
+
+            let needsWork = false;
+            let minesFound = 0;
+            for (let j = 0; j < adjTiles.length; j++) {
+                const adjTile = adjTiles[j];
+                if (adjTile.isSolverFoundBomb()) {
+                    minesFound++;
+                } else if (adjTile.isCovered()) {
+                    needsWork = true;
+                    work.add(adjTile.index);
+                }
+            }
+
+            // if a witness needs work (still has hidden adjacent tiles) or is broken then add it to the mix
+            if (needsWork || minesFound > tile.getValue()) {
+                witnesses.push(tile);
+            }
+
+        }
+
+        // generate an array of tiles from the map
+        for (let index of work) {
+            const tile = board.getTile(index);
+            tile.setOnEdge(true);
+            witnessed.push(tile);
+        }
+
+        //console.log("tiles left = " + squaresLeft);
+        //console.log("mines left = " + minesLeft);
+        //console.log("Witnesses  = " + witnesses.length);
+        //console.log("Witnessed  = " + witnessed.length);
+
+        var solutionCounter = new SolutionCounter(board, witnesses, witnessed, squaresLeft, minesLeft);
+
+        // let the solution counter know which tiles mustn't contain mines
+        if (notMines != null) {
+            for (let tile of notMines) {
+                if (!solutionCounter.setMustBeEmpty(tile)) {
+                    writeToConsole("Tile " + tile.asText() + " failed to set must be empty");
+                }
+            }
+        }
+
+        solutionCounter.process();
+
+        return solutionCounter;
+
+    }
 
 	getHorizontal(subject, maxMissingMines) {
 
@@ -194,7 +275,7 @@ class LongTermRiskHelper {
 		}
 
 		// see if the position is valid
-		const counter = solver.countSolutions(this.board, notMines);
+		const counter = this.countSolutions(this.board, notMines);
 
 		// remove the mines
 		for (let tile of mines) {
@@ -251,7 +332,7 @@ class LongTermRiskHelper {
 		}
 
 		// see if the position is valid
-		const counter = solver.countSolutions(this.board, notMines);
+		const counter = this.countSolutions(this.board, notMines);
 
 		// remove the mines
 		for (let tile of mines) {
@@ -262,6 +343,15 @@ class LongTermRiskHelper {
 
 		return new LTResult(counter.finalSolutionsCount, missingMines);
 
+	}
+
+	divideBigInt(numerator, denominator, dp) {
+
+		const work = numerator * power10n[dp] / denominator;
+	
+		const result = Number(work) / power10[dp];
+	
+		return result;
 	}
 
 	checkForBox5050() {
@@ -285,7 +375,7 @@ class LongTermRiskHelper {
 					
 					const influenceTally = this.addNotNull(BigInt(0), result);
 					
-					const influence = divideBigInt(influenceTally, this.currentPe.finalSolutionsCount, 4); 
+					const influence = this.divideBigInt(influenceTally, this.currentPe.finalSolutionsCount, 4); 
 					//this.writeToConsole("Tile " + tile1.asText() + " " + tile2.asText() + " " + tile3.asText() + " " + tile4.asText() + " have box 4-tile 50/50 influence " + influence);
 
 					this.addInfluence(influenceTally, result.enablers, [tile1, tile2, tile3, tile4]);
@@ -344,7 +434,7 @@ class LongTermRiskHelper {
 		}
 
 		// see if the position is valid
-		const counter = solver.countSolutions(this.board, notMines);
+		const counter = this.countSolutions(this.board, notMines);
 
 		this.writeToConsole("Candidate 50/50 - " + tile1.asText() + " " + tile2.asText() + " " + tile3.asText() + " " + tile4.asText() + " tally " + counter.finalSolutionsCount);
 		
@@ -613,3 +703,5 @@ class LTResult {
 		Object.seal(this) // prevent new properties being created
 	}
 }
+
+export {LongTermRiskHelper};

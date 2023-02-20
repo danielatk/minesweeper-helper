@@ -1,5 +1,6 @@
 "use strict";
 
+import {Action} from './Solver.js';
 
 // these variables are used across the family of classes used in this process
 class BruteForceGlobal {
@@ -72,7 +73,7 @@ class BruteForceAnalysis {
         for (let i = 0; i < top.getLivingLocations().length; i++) {
 
             if (this.verbose) {
-                showMessage("Analysing Brute Force Deep Analysis line " + i + " of " + top.getLivingLocations().length);
+                console.log("Analysing Brute Force Deep Analysis line " + i + " of " + top.getLivingLocations().length);
                 await sleep(1);
             }
  
@@ -749,3 +750,5 @@ class SolutionTable {
 
 // utility to sort an array 
 let subSort = (arr, i, n, sortFx) => [].concat(...arr.slice(0, i), ...arr.slice(i, i + n).sort(sortFx), ...arr.slice(i + n, arr.length));
+
+export {BruteForceAnalysis};

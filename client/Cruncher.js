@@ -1,5 +1,7 @@
 "use strict";
 
+import {Binomial} from '../Utility/Binomial.js';
+
 /**
  *  Performs a brute force search on the provided squares using the iterator 
  * 
@@ -144,6 +146,8 @@ class WitnessWebIterator {
 
         console.log("Creating Iterator");
 
+        let BINOMIAL = new Binomial(50000, 200);
+
         this.sample = [];  // int array
 
         this.tiles = [];  // list of tiles being iterated over
@@ -197,7 +201,7 @@ class WitnessWebIterator {
             loc.push(...w.tiles);
 
             // multiply up the number of iterations needed
-            this.cycles = this.cycles * combination(w.minesToFind, w.tiles.length);
+            this.cycles = this.cycles * BINOMIAL.combination(w.minesToFind, w.tiles.length);
 
         }
 
@@ -250,7 +254,7 @@ class WitnessWebIterator {
             this.mineOffset.push(indMines);
             this.cogs.push(new SequentialIterator(this.probabilityEngine.minesLeft - indMines, this.probabilityEngine.tilesLeft - indSquares));
 
-            this.cycles = this.cycles * combination(this.probabilityEngine.minesLeft - indMines, this.probabilityEngine.tilesLeft - indSquares);
+            this.cycles = this.cycles * BINOMIAL.combination(this.probabilityEngine.minesLeft - indMines, this.probabilityEngine.tilesLeft - indSquares);
         }
 
         this.top = this.cogs.length - 1;
@@ -407,3 +411,5 @@ class SequentialIterator {
     }
 
 }
+
+export {Cruncher, WitnessWebIterator};

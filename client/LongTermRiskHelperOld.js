@@ -1,5 +1,7 @@
 "use strict";
 
+import {Action} from './Solver.js';
+
 class LongTermRiskHelper {
 
 	constructor(board, pe, options) {
@@ -382,4 +384,4 @@ class Risk5050 {
 
 }
 
-
+export {LongTermRiskHelper};

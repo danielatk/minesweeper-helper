@@ -4,6 +4,9 @@
 
 "use strict";
 
+import {MergeSorter, ProbabilityLine, NextWitness, BoxWitness, Box} from './ProbabilityEngine.js';
+import {Binomial} from '../Utility/Binomial.js';
+
 class SolutionCounter {
 
     static SMALL_COMBINATIONS = [[1], [1, 1], [1, 2, 1], [1, 3, 3, 1], [1, 4, 6, 4, 1], [1, 5, 10, 10, 5, 1], [1, 6, 15, 20, 15, 6, 1], [1, 7, 21, 35, 35, 21, 7, 1], [1, 8, 28, 56, 70, 56, 28, 8, 1]];
@@ -567,6 +570,8 @@ class SolutionCounter {
     // sum them together to create a definitive probability for each box
     calculateBoxProbabilities() {
 
+        let BINOMIAL = new Binomial(50000, 200);
+
         const emptyBox = Array(this.boxes.length).fill(true);
 
         // total game tally
@@ -587,7 +592,7 @@ class SolutionCounter {
             if (pl.mineCount >= this.minTotalMines) {    // if the mine count for this solution is less than the minimum it can't be valid
 
                 //console.log("Mines left " + this.minesLeft + " mines on PL " + pl.mineCount + " squares left = " + this.squaresLeft);
-                var mult = combination(this.minesLeft - pl.mineCount, this.tilesOffEdge);  //# of ways the rest of the board can be formed
+                var mult = BINOMIAL.combination(this.minesLeft - pl.mineCount, this.tilesOffEdge);  //# of ways the rest of the board can be formed
 
                 outsideTally = outsideTally + mult * BigInt(this.minesLeft - pl.mineCount) * (pl.solutionCount);
 
@@ -666,3 +671,5 @@ class SolutionCounter {
     }
 
 }
+
+export {SolutionCounter};

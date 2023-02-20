@@ -1,5 +1,21 @@
 "use strict";
 
+import {Action} from './Solver.js';
+import {SolutionCounter} from './SolutionCounter.js';
+
+const PLAY_STYLE_FLAGS = 1;
+const PLAY_STYLE_NOFLAGS = 2;
+const PLAY_STYLE_EFFICIENCY = 3;
+const PLAY_STYLE_NOFLAGS_EFFICIENCY = 4;
+
+const ACTION_CLEAR = 1;
+const ACTION_FLAG = 2;
+const ACTION_CHORD = 3;
+
+const power10n = [BigInt(1), BigInt(10), BigInt(100), BigInt(1000), BigInt(10000), BigInt(100000), BigInt(1000000)];
+const power10 = [1, 10, 100, 1000, 10000, 100000, 1000000];
+const maxSolutionsDisplay = BigInt("100000000000000000");
+
 class EfficiencyHelper {
 
     static ALLOW_ZERO_NET_GAIN_CHORD = true;
@@ -13,6 +29,90 @@ class EfficiencyHelper {
         this.witnessed = witnessed;
         this.playStyle = playStyle;
         this.pe = pe;
+
+    }
+
+    divideBigInt(numerator, denominator, dp) {
+
+        const work = numerator * power10n[dp] / denominator;
+    
+        const result = Number(work) / power10[dp];
+    
+        return result;
+    }
+
+    countSolutions(board, notMines) {
+
+        // find all the tiles which are revealed and have un-revealed / un-flagged adjacent squares
+        const allCoveredTiles = [];
+        const witnesses = [];
+        const witnessed = [];
+
+        let minesLeft = board.num_bombs;
+        let squaresLeft = 0;
+
+        const work = new Set();  // use a map to deduplicate the witnessed tiles
+
+        for (let i = 0; i < board.tiles.length; i++) {
+
+            const tile = board.getTile(i);
+
+            if (tile.isSolverFoundBomb()) {
+                minesLeft--;
+                continue;  // if the tile is a flag then nothing to consider
+            } else if (tile.isCovered()) {
+                squaresLeft++;
+                allCoveredTiles.push(tile);
+                continue;  // if the tile hasn't been revealed yet then nothing to consider
+            }
+
+            const adjTiles = board.getAdjacent(tile);
+
+            let needsWork = false;
+            let minesFound = 0;
+            for (let j = 0; j < adjTiles.length; j++) {
+                const adjTile = adjTiles[j];
+                if (adjTile.isSolverFoundBomb()) {
+                    minesFound++;
+                } else if (adjTile.isCovered()) {
+                    needsWork = true;
+                    work.add(adjTile.index);
+                }
+            }
+
+            // if a witness needs work (still has hidden adjacent tiles) or is broken then add it to the mix
+            if (needsWork || minesFound > tile.getValue()) {
+                witnesses.push(tile);
+            }
+
+        }
+
+        // generate an array of tiles from the map
+        for (let index of work) {
+            const tile = board.getTile(index);
+            tile.setOnEdge(true);
+            witnessed.push(tile);
+        }
+
+        //console.log("tiles left = " + squaresLeft);
+        //console.log("mines left = " + minesLeft);
+        //console.log("Witnesses  = " + witnesses.length);
+        //console.log("Witnessed  = " + witnessed.length);
+
+        var solutionCounter = new SolutionCounter(board, witnesses, witnessed, squaresLeft, minesLeft);
+
+        // let the solution counter know which tiles mustn't contain mines
+        if (notMines != null) {
+            for (let tile of notMines) {
+                if (!solutionCounter.setMustBeEmpty(tile)) {
+                    writeToConsole("Tile " + tile.asText() + " failed to set must be empty");
+                }
+            }
+        }
+
+        solutionCounter.process();
+
+        return solutionCounter;
 
     }
 
@@ -105,7 +205,7 @@ class EfficiencyHelper {
             let bestAction = null;
             let highest = BigInt(0);
 
-            const currSolnCount = solver.countSolutions(this.board);
+            const currSolnCount = this.countSolutions(this.board);
             if (witnessReward != 0) {
                 highest = currSolnCount.finalSolutionsCount * BigInt(witnessReward);
             } else {
@@ -163,10 +263,10 @@ class EfficiencyHelper {
                     if (reward > witnessReward) {
 
                         tile.setValue(adjMines);
-                        const counter = solver.countSolutions(this.board);
+                        const counter = this.countSolutions(this.board);
                         tile.setCovered(true);
 
-                        const prob = divideBigInt(counter.finalSolutionsCount, currSolnCount.finalSolutionsCount, 4);
+                        const prob = this.divideBigInt(counter.finalSolutionsCount, currSolnCount.finalSolutionsCount, 4);
                         const expected = prob * reward;
 
                         // set this information on the tile, so we can display it in the tooltip
@@ -293,7 +393,7 @@ class EfficiencyHelper {
 
         const score = BigInt(failedBenefit) * total + BigInt(secondBenefit) * occurs;
 
-        const expected = failedBenefit + divideBigInt(occurs, total, 6) * secondBenefit;
+        const expected = failedBenefit + this.divideBigInt(occurs, total, 6) * secondBenefit;
 
         console.log("Chord " + chord1Tile.asText() + " followed by Chord " + chord2Tile.asText() + ": Chord 1: benefit " + chord1.netBenefit + ", Chord2: H=" + clearable + ", to F=" + needsFlag + ", Chord=" + chordClick
             + ", Benefit=" + secondBenefit + " ==> expected benefit " + expected);
@@ -339,7 +439,7 @@ class EfficiencyHelper {
         }
 
         // find the current solution count
-        const currSolnCount = solver.countSolutions(this.board);
+        const currSolnCount = this.countSolutions(this.board);
 
         let result = [];
         let zeroTile;
@@ -360,10 +460,10 @@ class EfficiencyHelper {
 
             if (!alreadyChecked.has(tile.index) && !tile.isSolverFoundBomb() && !tile.probability == 0) { // already evaluated or a mine
                 tile.setValue(0);
-                const counter = solver.countSolutions(this.board);
+                const counter = this.countSolutions(this.board);
                 tile.setCovered(true);
 
-                const zeroProb = divideBigInt(counter.finalSolutionsCount, currSolnCount.finalSolutionsCount, 6);
+                const zeroProb = this.divideBigInt(counter.finalSolutionsCount, currSolnCount.finalSolutionsCount, 6);
 
                 // set this information on the tile, so we can display it in the tooltip
                 tile.setValueProbability(0, zeroProb);
@@ -408,10 +508,10 @@ class EfficiencyHelper {
 
             if (act.action == ACTION_CLEAR && !alreadyChecked.has(tile.index) && !tile.isSolverFoundBomb() && !tile.probability == 0) { // already evaluated or a mine
                 tile.setValue(0);
-                const counter = solver.countSolutions(this.board);
+                const counter = this.countSolutions(this.board);
                 tile.setCovered(true);
 
-                const zeroProb = divideBigInt(counter.finalSolutionsCount, currSolnCount.finalSolutionsCount, 6);
+                const zeroProb = this.divideBigInt(counter.finalSolutionsCount, currSolnCount.finalSolutionsCount, 6);
 
                 // set this information on the tile, so we can display it in the tooltip
                 tile.setValueProbability(0, zeroProb);
@@ -464,13 +564,13 @@ class EfficiencyHelper {
 
         // see if adjacent tiles can be zero or not
         for (let index of adjacentWitnessed) {
-            const tile = board.getTile(index);
+            const tile = this.board.getTile(index);
 
             tile.setValue(0);
-            const counter = solver.countSolutions(this.board);
+            const counter = this.countSolutions(this.board);
             tile.setCovered(true);
 
-            const prob = divideBigInt(counter.finalSolutionsCount, currSolnCount.finalSolutionsCount, 6);
+            const prob = this.divideBigInt(counter.finalSolutionsCount, currSolnCount.finalSolutionsCount, 6);
 
             // set this information on the tile, so we can display it in the tooltip
             tile.setValueProbability(0, prob);
@@ -555,7 +655,7 @@ class EfficiencyHelper {
             }
 
             if (bestAllNotZeroAction != null) {
-                //const zeroTileProb = divideBigInt(zeroTileCount, currSolnCount.finalSolutionsCount, 6);
+                //const zeroTileProb = this.divideBigInt(zeroTileCount, currSolnCount.finalSolutionsCount, 6);
                 if (maxAllNotZeroProbability > zeroTileScore && zeroTileScore < 0.0) {
                     result.push(bestAllNotZeroAction);
                 } else {
@@ -599,3 +699,5 @@ class ChordLocation {
     }
 
 }
+
+export {EfficiencyHelper};

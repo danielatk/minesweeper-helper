@@ -196,3 +196,5 @@ class Tile {
 		return this.is_bomb;
 	}
 }
+
+export {Tile};

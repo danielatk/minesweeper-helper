@@ -4,11 +4,27 @@
 
 "use strict";
 
+import {Action} from './Solver.js';
+import {SolutionCounter} from './SolutionCounter.js';
+import {Binomial} from '../Utility/Binomial.js';
+import {Cruncher, WitnessWebIterator} from './Cruncher.js';
+
+const PLAY_STYLE_FLAGS = 1;
+const PLAY_STYLE_NOFLAGS = 2;
+const PLAY_STYLE_EFFICIENCY = 3;
+const PLAY_STYLE_NOFLAGS_EFFICIENCY = 4;
+
+const power10n = [BigInt(1), BigInt(10), BigInt(100), BigInt(1000), BigInt(10000), BigInt(100000), BigInt(1000000)];
+const power10 = [1, 10, 100, 1000, 10000, 100000, 1000000];
+const maxSolutionsDisplay = BigInt("100000000000000000");
+
 class ProbabilityEngine {
 
     static SMALL_COMBINATIONS = [[1], [1, 1], [1, 2, 1], [1, 3, 3, 1], [1, 4, 6, 4, 1], [1, 5, 10, 10, 5, 1], [1, 6, 15, 20, 15, 6, 1], [1, 7, 21, 35, 35, 21, 7, 1], [1, 8, 28, 56, 70, 56, 28, 8, 1]];
 
 	constructor(board, allWitnesses, allWitnessed, squaresLeft, minesLeft, options) {
+
+        this.BINOMIAL = new Binomial(50000, 200);
 
         this.board = board;
         this.options = options;
@@ -1306,7 +1322,7 @@ class ProbabilityEngine {
             // split the witnesses into dependent ones and independent ones 
             if (okay) {
                 this.remainingSquares = this.remainingSquares - w.tiles.length;
-                this.independentIterations = this.independentIterations * combination(w.minesToFind, w.tiles.length);
+                this.independentIterations = this.independentIterations * this.BINOMIAL.combination(w.minesToFind, w.tiles.length);
                 this.independentMines = this.independentMines + w.minesToFind;
                 this.independentWitnesses.push(w);  
             } else {
@@ -1316,6 +1332,15 @@ class ProbabilityEngine {
 
         this.writeToConsole("Calculated " + this.independentWitnesses.length + " independent witnesses");
 
+    }
+
+    divideBigInt(numerator, denominator, dp) {
+
+        const work = numerator * power10n[dp] / denominator;
+    
+        const result = Number(work) / power10[dp];
+    
+        return result;
     }
 
     // here we expand the localised solution to one across the whole board and
@@ -1344,7 +1369,7 @@ class ProbabilityEngine {
 
             if (pl.mineCount >= this.minTotalMines) {    // if the mine count for this solution is less than the minimum it can't be valid
  
-                const mult = combination(this.minesLeft - pl.mineCount, this.TilesOffEdge);  //# of ways the rest of the board can be formed
+                const mult = this.BINOMIAL.combination(this.minesLeft - pl.mineCount, this.TilesOffEdge);  //# of ways the rest of the board can be formed
                 const newSolutions = mult * pl.solutionCount;
 
                 this.writeToConsole(newSolutions + " solutions with " + pl.mineCount + " mines on Perimeter");
@@ -1376,7 +1401,7 @@ class ProbabilityEngine {
                     this.emptyBoxes.push(this.boxes[i]);
 
                 } else {  // neither mine nor safe
-                    this.boxProb[i] = 1 - divideBigInt(tally[i], totalTally, 6);
+                    this.boxProb[i] = 1 - this.divideBigInt(tally[i], totalTally, 6);
                 }
 
                 this.boxes[i].mineTally = tally[i]; 
@@ -1419,7 +1444,7 @@ class ProbabilityEngine {
 
         // avoid divide by zero
         if (this.TilesOffEdge != 0 && totalTally != BigInt(0)) {
-            this.offEdgeProbability = 1 - divideBigInt(outsideTally, totalTally * BigInt(this.TilesOffEdge), 6);
+            this.offEdgeProbability = 1 - this.divideBigInt(outsideTally, totalTally * BigInt(this.TilesOffEdge), 6);
             this.offEdgeMineTally = outsideTally / BigInt(this.TilesOffEdge);
         } else {
             this.offEdgeProbability = 0;
@@ -1922,3 +1947,5 @@ class Link {
     }
 
 }
+
+export {ProbabilityEngine, MergeSorter, ProbabilityLine, NextWitness, BoxWitness, Box};

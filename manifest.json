@@ -15,6 +15,13 @@
 	"host_permissions": [
 		"https://minesweeper.online/game/*"
 	],
+	"web_accessible_resources": [{
+		"matches": ["https://minesweeper.online/*"],
+		"resources": [
+			"client/*",
+			"Utility/*"
+		]
+	}],
 	"icons": {
 		"16": "simley_16.png",
 		"48": "simley_48.png",
@@ -28,7 +35,7 @@
 	 "content_scripts": [
 		{
 		  "matches": ["https://minesweeper.online/game/*"],
-		  "js": ["index.js"]
+		  "js": ["content.js"]
 		}
 	 ]
 } 
