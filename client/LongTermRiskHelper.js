@@ -398,7 +398,7 @@ class LongTermRiskHelper {
 		const i = subject.getX();
 		const j = subject.getY();
 
-		if (j < 0 || j + 1 >= board.height || i < 0 || i + 1 >= board.width) {
+		if (j < 0 || j + 1 >= this.board.height || i < 0 || i + 1 >= this.board.width) {
 			return null;
 		}
 
