@@ -4,14 +4,7 @@
  * @date:   2023-02-16
  */
 
-/**
- * Functionalities to add:
- * - export in mbf format
- * - export to chosen location
- * - add analysis support
- */
-
- let contentMain;
+let contentMain;
 
 (async () => {
     const src = chrome.runtime.getURL('client/main.js');

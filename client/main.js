@@ -197,18 +197,32 @@ function renderHints(hints, otherActions) {
         const hint = hints[i];
 
         let cell = document.getElementById(`cell_${hint.x}_${hint.y}`);
-        console.log(cell);
 
         if (hint.action == ACTION_CHORD) {
             cell.classList.add('hd_safe'); 
+            cell.classList.remove('hd_unsafe');
+            cell.classList.remove('hd_dead');
+            cell.classList.remove('hd_efficient');
         } else if (hint.prob == 0) {   // mine
-            cell.classList.add('hd_unsafe'); 
+            cell.classList.add('hd_unsafe');
+            cell.classList.remove('hd_safe');
+            cell.classList.remove('hd_dead');
+            cell.classList.remove('hd_efficient'); 
         } else if (hint.prob == 1) {  // safe
-            cell.classList.add('hd_safe'); 
+            cell.classList.add('hd_safe');
+            cell.classList.remove('hd_unsafe');
+            cell.classList.remove('hd_dead');
+            cell.classList.remove('hd_efficient');
         } else if (hint.dead) {  // uncertain but dead
-            cell.classList.add('hd_dead'); 
+            cell.classList.add('hd_dead');
+            cell.classList.remove('hd_safe');
+            cell.classList.remove('hd_unsafe');
+            cell.classList.remove('hd_efficient'); 
         } else {  //uncertain
-            cell.classList.add('hd_efficient'); 
+            cell.classList.add('hd_efficient');
+            cell.classList.remove('hd_safe');
+            cell.classList.remove('hd_unsafe');
+            cell.classList.remove('hd_dead'); 
             if (firstGuess == 0) {
                 firstGuess = 1;
             }
@@ -268,8 +282,14 @@ function renderHints(hints, otherActions) {
         let cell = document.getElementById(`cell_${action.x}_${action.y}`);
         if (action.action == ACTION_CLEAR) {
             cell.classList.add('hd_safe');
+            cell.classList.remove('hd_unsafe');
+            cell.classList.remove('hd_dead');
+            cell.classList.remove('hd_efficient');
         } else {
-            cell.classList.add('hd_unsafe'); 
+            cell.classList.add('hd_unsafe');
+            cell.classList.remove('hd_safe');
+            cell.classList.remove('hd_dead');
+            cell.classList.remove('hd_efficient');
         }
         cell.classList.remove('hd_closed');
     }
