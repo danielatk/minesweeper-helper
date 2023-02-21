@@ -33,7 +33,7 @@
 		"name": "popup",
 		"default_popup": "popup.html"
 	},
- 	"description": "Export boards in plain text and outputs to console",
+ 	"description": "Real time analysis of minesweeper.online boards",
 	 "content_scripts": [
 		{
 		  "matches": ["https://minesweeper.online/game/*"],
