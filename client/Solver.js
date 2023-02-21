@@ -430,11 +430,7 @@ async function solver(board, options) {
 
         // if we are having to guess and there are less then BFDA_THRESHOLD solutions use the brute force deep analysis...
         let bfdaThreshold;
-        if (analysisMode) {
-            bfdaThreshold = ANALYSIS_BFDA_THRESHOLD;
-        } else {
-            bfdaThreshold = PLAY_BFDA_THRESHOLD;
-        }
+        bfdaThreshold = PLAY_BFDA_THRESHOLD;
 
         let partialBFDA = null;
         if (pe.bestProbability < 1 && pe.finalSolutionsCount < bfdaThreshold) {

@@ -175,40 +175,6 @@ function on_click(event, x, y) {
 // create a BLOB of the data, insert a URL to it into the download link
 async function downloadAsMBF(e) {
 
-    // if we are in analysis mode then create the url, otherwise the url was created when the game was generated
-    if (analysisMode) {
-        if (board == null) {
-            e.preventDefault();
-            console.log("No Board defined, unable to generate MBF");
-            return false;
-        }
-
-        if (board.bombs_left != 0) {
-            console.log("Mines left must be zero in order to download the board from Analysis mode.");
-            e.preventDefault();
-            return false;
-        }
-
-        const mbf = board.getFormatMBF();
-
-        if (mbf == null) {
-            console.log("Null data returned from getFormatMBF()");
-            e.preventDefault();
-            return false;
-        }
-
-        const blob = new Blob([mbf], { type: 'application/octet-stream' })
-
-        const url = URL.createObjectURL(blob);
-
-        console.log(url);
-
-        downloadHyperlink.href = url;  // Set the url ready to be downloaded
-
-        // give it 10 seconds then revoke the url
-        setTimeout(function () { console.log("Revoked " + url); URL.revokeObjectURL(url) }, 10000, url);
-    }
-
     // create a download name based on the date/time
     const now = new Date();
 
@@ -519,7 +485,7 @@ function followCursor(e) {
     hoverTile = board.getTileXY(col, row);
 
     // if not showing hints don't show tooltip
-    if (!showHints && !analysisMode && !justPressedAnalyse) {
+    if (!showHints && !justPressedAnalyse) {
         tooltip.innerText = "";
         return;
     }
@@ -528,27 +494,6 @@ function followCursor(e) {
 
     tooltip.style.left = (TILE_SIZE + e.clientX - 220) + 'px';
     tooltip.style.top = (e.clientY - TILE_SIZE * 1.5 - 70) + 'px';
-
-    if (dragging && analysisMode) {
-
-        const tile = hoverTile;
-
-        if (!tile.isEqual(dragTile)) {
-
-            dragTile = tile;  // remember the latest tile
-
-            if (tile.isCovered()) {
-                const flagCount = board.adjacentFoundMineCount(tile);
-                tile.setValue(flagCount);
-            } else {
-                tile.setCovered(true);
-            }
-
-            // update the graphical board
-            window.requestAnimationFrame(() => renderTiles([tile]));
-        }
-
-    }
 
     if (row >= board.height || row < 0 || col >= board.width || col < 0) {
         //console.log("outside of game boundaries!!");
