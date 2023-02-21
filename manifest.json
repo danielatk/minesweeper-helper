@@ -37,6 +37,7 @@
 	 "content_scripts": [
 		{
 		  "matches": ["https://minesweeper.online/game/*"],
+		  "css": ["tiles.css"],
 		  "js": ["content.js"]
 		}
 	 ]

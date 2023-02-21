@@ -232,31 +232,22 @@ function renderHints(hints, otherActions) {
 
         let cell = document.getElementById(`cell_${hint.x}_${hint.y}`);
         console.log(cell);
-        // let cellColor;
 
         if (hint.action == ACTION_CHORD) {
-            cell.style.backgroundImage = `url("${facingDownGreenImgUrl}");`;
-            // cellColor = "#00FF00";
+            cell.classList.add('hd_safe'); 
         } else if (hint.prob == 0) {   // mine
-            cell.style.backgroundImage = `url("${facingDownRedImgUrl}");`;
-            // cellColor = "#FF0000";
+            cell.classList.add('hd_unsafe'); 
         } else if (hint.prob == 1) {  // safe
-            cell.style.backgroundImage = `url("${facingDownGreenImgUrl}");`;
-            // cellColor = "#00FF00";
+            cell.classList.add('hd_safe'); 
         } else if (hint.dead) {  // uncertain but dead
-            cell.style.backgroundImage = `url("${facingDownBlackImgUrl}");`;
-            // cellColor = "black";
+            cell.classList.add('hd_dead'); 
         } else {  //uncertain
-            cell.style.backgroundImage = `url("${facingDownOrangeImgUrl}");`;
-            // cellColor = "orange";
+            cell.classList.add('hd_efficient'); 
             if (firstGuess == 0) {
                 firstGuess = 1;
             }
         }
-
-        console.log(facingDownOrangeImgUrl);
-
-        console.log(cell.style);
+        cell.classList.remove('hd_closed');
 
         // cell.style.color=cellColor;
         // cell.style.opacity = '0.5';
@@ -308,15 +299,13 @@ function renderHints(hints, otherActions) {
 
     // these are from the efficiency play style and are the known moves which haven't been made
     for (let action of otherActions) {
-        let cellColor;
-        if (action.action == ACTION_CLEAR) {
-            cellColor = "#00FF00";
-        } else {
-            cellColor = "#FF0000";
-        }
         let cell = document.getElementById(`cell_${action.x}_${action.y}`);
-        cell.style.color=cellColor;
-        // ctxHints.fillRect((action.x + 0.35) * TILE_SIZE, (action.y + 0.35) * TILE_SIZE, 0.3 * TILE_SIZE, 0.3 * TILE_SIZE);
+        if (action.action == ACTION_CLEAR) {
+            cell.classList.add('hd_safe');
+        } else {
+            cell.classList.add('hd_unsafe'); 
+        }
+        cell.classList.remove('hd_closed');
     }
 
 }
@@ -495,10 +484,12 @@ async function doAnalysis() {
 
         justPressedAnalyse = true;
 
-        window.requestAnimationFrame(() => renderHints(hints, solve.other));
+        // window.requestAnimationFrame(() => renderHints(hints, solve.other));
+        renderHints(hints, solve.other);
     } else {
         console.log("The board is in an invalid state");
-        window.requestAnimationFrame(() => renderHints([], []));
+        // window.requestAnimationFrame(() => renderHints([], []));
+        renderHints([], []);
     }
 
     // by delaying removing the logical lock we absorb any secondary clicking of the button / hot key
