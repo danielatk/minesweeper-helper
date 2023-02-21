@@ -2,9 +2,10 @@
 	"manifest_version": 3,
 	"name": "Minesweeper Helper",
 	"short_name": "MH",
-	"version": "0.0.1",
+	"version": "1.0.0",
 	"permissions": [
 		"activeTab",
+		"scripting",
 		"webNavigation",
 		"debugger",
 		"storage",
@@ -15,6 +16,14 @@
 	"host_permissions": [
 		"https://minesweeper.online/game/*"
 	],
+	"web_accessible_resources": [{
+		"matches": ["https://minesweeper.online/*"],
+		"resources": [
+			"client/*",
+			"Utility/*",
+			"resources/*"
+		]
+	}],
 	"icons": {
 		"16": "simley_16.png",
 		"48": "simley_48.png",
@@ -24,11 +33,12 @@
 		"name": "popup",
 		"default_popup": "popup.html"
 	},
- 	"description": "Export boards in plain text and outputs to console",
+ 	"description": "Real time analysis of minesweeper.online boards",
 	 "content_scripts": [
 		{
 		  "matches": ["https://minesweeper.online/game/*"],
-		  "js": ["index.js"]
+		  "css": ["tiles.css"],
+		  "js": ["content.js"]
 		}
 	 ]
 } 

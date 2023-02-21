@@ -12,8 +12,10 @@ It is inconvenient to run the instructions above on Windows. For more informatio
 https://stackoverflow.com/questions/24577024/install-chrome-extension-not-in-the-store
 
 ## Usage
-Currently this extension will save the board of any minesweeper.online game currently active in plain text.
-Format is compatible with JSMinesweeper board exports (https://github.com/DavidNHill/JSMinesweeper)
+This extension allows users to see real-time analysis of the current minesweeper.online board.
+This has been adapted from JSMinesweeper (https://github.com/DavidNHill/JSMinesweeper).
+There is also an option to save the board of any minesweeper.online game currently active in plain text.
+The format is compatible with JSMinesweeper board exports.
 
 ## Contact
 My profile in minesweeper.online: https://minesweeper.online/player/11626743

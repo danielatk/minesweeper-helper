@@ -4,11 +4,37 @@
  * @date:   2023-02-16
  */
 
+let contentMain;
+
+(async () => {
+    const src = chrome.runtime.getURL('client/main.js');
+    contentMain = await import(src);
+    contentMain.startup();
+})();
+
 chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
-    if (msg.text === 'export') {
-        let board = getBoard();
-        console.log(board);
-        sendResponse(board);
+    let board;
+    switch(msg.text) {
+        case 'export':
+            board = getBoard();
+            console.log(board);
+            sendResponse(board);
+            break;
+        case 'analyse':
+            contentMain.resetBoard();
+            contentMain.doAnalysis();
+            break;
+        case 'change-overlay':
+            contentMain.changeOverlay(msg.value.toLowerCase());
+            break;
+        case 'change-playstyle':
+            contentMain.changePlayStyle(msg.value.toLowerCase());
+            break;
+        case 'change-showhints':
+            contentMain.toggleShowHints(msg.marked);
+            break;
+        default:
+            break;
     }
 });
 
@@ -54,7 +80,7 @@ function getBoard() {
         mines = document.getElementById('custom_mines').value;
     }
 
-    let data = width + "x" + height + "x" + mines + '\n';
+    let data = `${width}x${height}x${mines}\n`;
     for (let i = 0; i < height; i++) {
         for (let j = 0; j < width; j++) {
             let cell = document.getElementById(`cell_${j}_${i}`);
