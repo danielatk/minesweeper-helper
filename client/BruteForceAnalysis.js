@@ -10,6 +10,10 @@ class BruteForceGlobal {
     static PRUNE_BF_ANALYSIS = true;
     static BRUTE_FORCE_ANALYSIS_TREE_DEPTH = 4;
 
+    static ACTION_CLEAR = 1;
+    static ACTION_FLAG = 2;
+    static ACTION_CHORD = 3;
+
     static INDENT = "................................................................................";
 
     // globals used in this processing

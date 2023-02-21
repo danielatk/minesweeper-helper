@@ -2,6 +2,10 @@
 
 import {Action} from './Solver.js';
 
+const ACTION_CLEAR = 1;
+const ACTION_FLAG = 2;
+const ACTION_CHORD = 3;
+
 class LongTermRiskHelper {
 
 	constructor(board, pe, options) {
