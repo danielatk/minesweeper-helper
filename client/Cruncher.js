@@ -2,6 +2,8 @@
 
 import {Binomial} from '../Utility/Binomial.js';
 
+const BOMB = 9;
+
 /**
  *  Performs a brute force search on the provided squares using the iterator 
  * 

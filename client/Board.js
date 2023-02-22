@@ -5,7 +5,6 @@
 
 const ACTION_CLEAR = 1;
 const ACTION_FLAG = 2;
-const ACTION_CHORD = 3;
 
 import {Tile} from './Tile.js';
 import {Action} from './Solver.js';

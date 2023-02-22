@@ -3,8 +3,6 @@
 import {Action} from './Solver.js';
 import {SolutionCounter} from './SolutionCounter.js';
 
-const PLAY_STYLE_FLAGS = 1;
-const PLAY_STYLE_NOFLAGS = 2;
 const PLAY_STYLE_EFFICIENCY = 3;
 const PLAY_STYLE_NOFLAGS_EFFICIENCY = 4;
 

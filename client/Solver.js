@@ -15,7 +15,6 @@ const OFFSETS = [[2, 0], [-2, 0], [0, 2], [0, -2]];
 const OFFSETS_ALL = [[2, -2], [2, -1], [2, 0], [2, 1], [2, 2], [-2, -2], [-2, -1], [-2, 0], [-2, 1], [-2, 2], [-1, 2], [0, 2], [1, 2], [-1, -2], [0, -2], [1, -2]];
 
 const PLAY_BFDA_THRESHOLD = 1000;       // number of solutions for the Brute force analysis to start
-const ANALYSIS_BFDA_THRESHOLD = 5000;
 const BRUTE_FORCE_CYCLES_THRESHOLD = 1000000;
 const HARD_CUT_OFF = 0.90;        // cutoff for considering on edge possibilities below the best probability
 const OFF_EDGE_THRESHOLD = 0.95;  // when to include possibilities off the edge
@@ -24,13 +23,11 @@ const PROGRESS_CONTRIBUTION = 0.2;  // how much progress counts towards the fina
 const USE_HIGH_DENSITY_STRATEGY = false;  // I think "secondary safety" generally works better than "solution space reduction"
 
 const PLAY_STYLE_FLAGS = 1;
-const PLAY_STYLE_NOFLAGS = 2;
 const PLAY_STYLE_EFFICIENCY = 3;
 const PLAY_STYLE_NOFLAGS_EFFICIENCY = 4;
 
 const ACTION_CLEAR = 1;
 const ACTION_FLAG = 2;
-const ACTION_CHORD = 3;
 
 // solver entry point
 async function solver(board, options) {

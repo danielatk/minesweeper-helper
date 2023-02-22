@@ -2,6 +2,10 @@
 
 import {Action} from './Solver.js';
 
+const BOMB = 9;
+
+const ACTION_CLEAR = 1;
+
 // these variables are used across the family of classes used in this process
 class BruteForceGlobal {
 
