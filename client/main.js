@@ -30,8 +30,8 @@ const PLAY_STYLE_EFFICIENCY = 3;
 const PLAY_STYLE_NOFLAGS_EFFICIENCY = 4;
 
 let showHints = true;
-let playStyle = 'Flagging';
-let overlay = 'None';
+let playStyle = 'flag';
+let overlay = 'none';
 
 let justPressedAnalyse = false;
 
