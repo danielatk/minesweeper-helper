@@ -39,50 +39,50 @@ document.getElementById('AnalysisButton').addEventListener('click',
   }
 );
 
-let overlay = document.getElementById('overlay');
+// let overlay = document.getElementById('overlay');
 
-overlay.addEventListener('change',
-  function() {
-    chrome.tabs.query({currentWindow: true, active: true}, function (tabs){
-      let activeTab = getCurrentTab(tabs);
-      if (typeof activeTab === 'undefined') {
-        alert('No valid minesweeper game found');
-        return;
-      }
-      chrome.tabs.sendMessage(activeTab.id, {text: 'change-overlay', value: overlay.value});
-    });
-  }
-);
+// overlay.addEventListener('change',
+//   function() {
+//     chrome.tabs.query({currentWindow: true, active: true}, function (tabs){
+//       let activeTab = getCurrentTab(tabs);
+//       if (typeof activeTab === 'undefined') {
+//         alert('No valid minesweeper game found');
+//         return;
+//       }
+//       chrome.tabs.sendMessage(activeTab.id, {text: 'change-overlay', value: overlay.value});
+//     });
+//   }
+// );
 
-let playStyle = document.getElementById('playstyle');
+// let playStyle = document.getElementById('playstyle');
 
-playStyle.addEventListener('change',
-  function() {
-    chrome.tabs.query({currentWindow: true, active: true}, function (tabs){
-      let activeTab = getCurrentTab(tabs);
-      if (typeof activeTab === 'undefined') {
-        alert('No valid minesweeper game found');
-        return;
-      }
-      chrome.tabs.sendMessage(activeTab.id, {text: 'change-playstyle', value: playStyle.value});
-    });
-  }
-);
+// playStyle.addEventListener('change',
+//   function() {
+//     chrome.tabs.query({currentWindow: true, active: true}, function (tabs){
+//       let activeTab = getCurrentTab(tabs);
+//       if (typeof activeTab === 'undefined') {
+//         alert('No valid minesweeper game found');
+//         return;
+//       }
+//       chrome.tabs.sendMessage(activeTab.id, {text: 'change-playstyle', value: playStyle.value});
+//     });
+//   }
+// );
 
-let showHints = document.getElementById('showhints');
+// let showHints = document.getElementById('showhints');
 
-showHints.addEventListener('change',
-  function() {
-    chrome.tabs.query({currentWindow: true, active: true}, function (tabs){
-      let activeTab = getCurrentTab(tabs);
-      if (typeof activeTab === 'undefined') {
-        alert('No valid minesweeper game found');
-        return;
-      }
-      chrome.tabs.sendMessage(activeTab.id, {text: 'change-showhints', marked: showHints.marked});
-    });
-  }
-);
+// showHints.addEventListener('change',
+//   function() {
+//     chrome.tabs.query({currentWindow: true, active: true}, function (tabs){
+//       let activeTab = getCurrentTab(tabs);
+//       if (typeof activeTab === 'undefined') {
+//         alert('No valid minesweeper game found');
+//         return;
+//       }
+//       chrome.tabs.sendMessage(activeTab.id, {text: 'change-showhints', marked: showHints.marked});
+//     });
+//   }
+// );
 
 // TODO(danielatk): add listener to each of the dropdowns and checkboxes so that value is always kept track of
 
