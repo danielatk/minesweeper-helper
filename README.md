@@ -17,5 +17,9 @@ This has been adapted from JSMinesweeper (https://github.com/DavidNHill/JSMinesw
 There is also an option to save the board of any minesweeper.online game currently active in plain text.
 The format is compatible with JSMinesweeper board exports.
 
+## Demo
+Below is a demo of the extension being used in real time
+[Screencast from 2024-09-17 13-48-56.webm](https://github.com/user-attachments/assets/1fffcb69-421e-4281-93ae-dc5b5fefa7ac)
+
 ## Contact
 My profile in minesweeper.online: https://minesweeper.online/player/11626743
