@@ -20,7 +20,7 @@ The format is compatible with JSMinesweeper board exports.
 ## Demo
 Below is a demo of the extension being used in real time
 
-![Demo](https://github.com/user-attachments/assets/demo.mp4)
+![Demo](https://github.com/danielatk/minesweeper-helper/raw/main/assets/demo.mp4)
 
 ## Contact
 My profile in minesweeper.online: https://minesweeper.online/player/11626743
